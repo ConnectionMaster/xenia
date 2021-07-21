@@ -17,6 +17,7 @@
 #include "xenia/base/filesystem.h"
 #include "xenia/base/logging.h"
 #include "xenia/base/platform_win.h"
+#include "xenia/ui/virtual_key.h"
 
 namespace xe {
 namespace ui {
@@ -66,7 +67,8 @@ bool Win32Window::OnCreate() {
       auto spda = (decltype(&SetProcessDpiAwareness))SetProcessDpiAwareness_;
       auto res = spda(PROCESS_PER_MONITOR_DPI_AWARE);
       if (res != S_OK) {
-        XELOGW("Failed to set process DPI awareness. (code = 0x{:08X})", res);
+        XELOGW("Failed to set process DPI awareness. (code = 0x{:08X})",
+               static_cast<uint32_t>(res));
       }
     }
 
@@ -198,11 +200,12 @@ void Win32Window::DisableMainMenu() {
   }
 }
 
-bool Win32Window::set_title(const std::string& title) {
+bool Win32Window::set_title(const std::string_view title) {
   if (!super::set_title(title)) {
     return false;
   }
-  SetWindowTextW(hwnd_, reinterpret_cast<LPCWSTR>(xe::to_utf16(title).c_str()));
+  auto wide_title = xe::to_utf16(title);
+  SetWindowTextW(hwnd_, reinterpret_cast<LPCWSTR>(wide_title.c_str()));
   return true;
 }
 
@@ -704,7 +707,7 @@ bool Win32Window::HandleMouse(UINT message, WPARAM wParam, LPARAM lParam) {
 
 bool Win32Window::HandleKeyboard(UINT message, WPARAM wParam, LPARAM lParam) {
   auto e = KeyEvent(
-      this, static_cast<int>(wParam), lParam & 0xFFFF0000, !!(lParam & 0x2),
+      this, VirtualKey(wParam), lParam & 0xFFFF0000, !!(lParam & 0x2),
       !!(GetKeyState(VK_SHIFT) & 0x80), !!(GetKeyState(VK_CONTROL) & 0x80),
       !!(GetKeyState(VK_MENU) & 0x80), !!(GetKeyState(VK_LWIN) & 0x80));
   switch (message) {

@@ -12,6 +12,7 @@
 #include "xenia/base/assert.h"
 #include "xenia/base/logging.h"
 #include "xenia/base/platform_linux.h"
+#include "xenia/ui/virtual_key.h"
 #include "xenia/ui/window_gtk.h"
 
 namespace xe {
@@ -99,11 +100,12 @@ void GTKWindow::OnClose() {
   super::OnClose();
 }
 
-bool GTKWindow::set_title(const std::string& title) {
+bool GTKWindow::set_title(const std::string_view title) {
   if (!super::set_title(title)) {
     return false;
   }
-  gtk_window_set_title(GTK_WINDOW(window_), (gchar*)title.c_str());
+  std::string titlez(title);
+  gtk_window_set_title(GTK_WINDOW(window_), (gchar*)titlez.c_str());
   return true;
 }
 
@@ -349,9 +351,10 @@ bool GTKWindow::HandleKeyboard(GdkEventKey* event) {
   bool ctrl_pressed = modifiers & GDK_CONTROL_MASK;
   bool alt_pressed = modifiers & GDK_META_MASK;
   bool super_pressed = modifiers & GDK_SUPER_MASK;
-  auto e =
-      KeyEvent(this, event->hardware_keycode, 1, event->type == GDK_KEY_RELEASE,
-               shift_pressed, ctrl_pressed, alt_pressed, super_pressed);
+  // TODO(Triang3l): event->hardware_keycode to VirtualKey translation.
+  auto e = KeyEvent(this, VirtualKey(event->hardware_keycode), 1,
+                    event->type == GDK_KEY_RELEASE, shift_pressed, ctrl_pressed,
+                    alt_pressed, super_pressed);
   switch (event->type) {
     case GDK_KEY_PRESS:
       OnKeyDown(&e);
